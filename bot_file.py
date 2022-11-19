@@ -91,7 +91,6 @@ for event in longpoll.listen():
             elif all([CITY_FLAG is True]):
                 search_params += [request]
                 CITY_FLAG == False
-                write_msg(event.user_id, ','.join(search_params))
             elif re.match("пока", request, re.IGNORECASE):
                 write_msg(event.user_id, "До встречи!")
             else:
