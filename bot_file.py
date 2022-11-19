@@ -1,67 +1,49 @@
-from random import randrange
 import configparser
 import vk_api
-import requests
 import re
+import sqlalchemy as sq
+
 from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
+from models import create_tables
+from sqlalchemy.orm import sessionmaker
+from db_service import DbService
+from message_service import MessageService
+from vk_search import Vk_search
 
 
-def get_token():
+def get_config():
     config = configparser.ConfigParser()
     config.read('token.ini')
-    token = config['VK']['vk_group_token']
-    return token
+    return config
 
 
-vk = vk_api.VkApi(token=get_token())
-longpoll = VkLongPoll(vk)
+def get_token(config):
+    return config['VK']['vk_group_token']
 
 
-
-def get_all_fields():
-    all_fields = 'bdate,activities,about,blacklisted,blacklisted_by_me,books,can_be_invited_group,can_post,' \
-                 'can_see_all_posts,can_see_audio,can_send_friend_request,can_write_private_message,career,connections,' \
-                 'contacts,city,country,crop_photo,domain,education,exports,followers_count,friend_status,has_photo,' \
-                 'has_mobile,home_town,photo_100,photo_200,photo_200_orig,photo_400_orig,photo_50,sex,site,schools,' \
-                 'screen_name,status,verified,games,interests,is_favorite,is_friend,is_hidden_from_feed,last_seen,' \
-                 'maiden_name,military,movies,music,nickname,occupation,online,personal,photo_id,photo_max,' \
-                 'photo_max_orig,quotes,relation,relatives,timezone,tv,universities'
-    return all_fields
-
-def show_button(user_id, message, keyboard):
-    vk.method('messages.send', {'user_id': user_id, 'message': message, 'random_id': randrange(10 ** 7),
-                                'keyboard': keyboard.get_keyboard()})
-
-def write_msg(user_id, message):
-    vk.method('messages.send', {'user_id': user_id, 'message': message,  'random_id': randrange(10 ** 7)})
+def get_DSN(config):
+    PG_USER = config['PG']['PG_USER']
+    PG_PASSWORD = config['PG']['PG_PASSWORD']
+    SERVER = config['PG']['SERVER']
+    PORT = config['PG']['PORT']
+    DB_NAME = config['PG']['DB_NAME']
+    return f'postgresql://{PG_USER}:{PG_PASSWORD}@{SERVER}:{PORT}/{DB_NAME}'
 
 
-def sex_check():
-    vk_keyboard = VkKeyboard(one_time=True)
-    vk_color = VkKeyboardColor
-    vk_keyboard.add_button('М', color=vk_color.PRIMARY)
-    vk_keyboard.add_button('Ж', color=vk_color.NEGATIVE)
-    return vk_keyboard
-
-def age_check():
-    vk_keyboard = VkKeyboard(one_time=True)
-    vk_color = VkKeyboardColor
-    vk_keyboard.add_button('18-25', color=vk_color.PRIMARY)
-    vk_keyboard.add_button('25-35', color=vk_color.PRIMARY)
-    vk_keyboard.add_button('35-40', color=vk_color.PRIMARY)
-    vk_keyboard.add_button('40-50', color=vk_color.PRIMARY)
-    return vk_keyboard
-def get_user_data(user_id):
-
-    api = vk.get_api()
-    return api.users.get(user_ids=str(user_id), fields=get_all_fields())
-
-
-SEX_FLAG = False
-AGE_FLAG = False
-CITY_FLAG = False
+SEX_FLAG, AGE_FLAG, CITY_FLAG = False, False, False
 AGES_LIST = ['18-25', '25-35', '35-40', '40-50']
+
+config = get_config()
+vk = vk_api.VkApi(token=get_token(config))
+longpoll = VkLongPoll(vk)
+engine = sq.create_engine(get_DSN(config))
+create_tables(engine)
+Session = sessionmaker(bind=engine)
+session = Session()
+ms = MessageService(VkKeyboard, VkKeyboardColor, vk)
+vk_search = Vk_search(vk.get_api(), config['VK']['vk_app_token'])
+
 for event in longpoll.listen():
 
     if event.type == VkEventType.MESSAGE_NEW:
@@ -71,27 +53,39 @@ for event in longpoll.listen():
 
             if re.match('привет', request, re.IGNORECASE):
                 search_params = []
-                write_msg(event.user_id, f"Привет, {get_user_data(event.user_id)[0]['first_name']}.\n"
-                                         f"Давай найдем тебе вторую половинку.\n"
-                                         f"Укажи пол своего избранника(цы) - в ответ напиши М или Ж")
-
-                show_button(event.user_id, 'Укажи пол своего избранника(цы)', sex_check())
+                user = vk_search.get_user(event.user_id)[0]
+                ms.send_message(user_id=event.user_id,
+                                message=ms.hello_message(user['first_name']))
+                ms.send_message(user_id=event.user_id, message=ms.choose_sex(),
+                                keyboard=ms.get_keyboard(('М', 'Ж'), ['PRIMARY', 'NEGATIVE']))
                 SEX_FLAG = True
+                client = DbService(session).save_client(user)
+                session.add(client)
+                session.commit()
 
-            elif request == 'М' or request == 'Ж' and SEX_FLAG is True:
+            elif request in ('М', 'Ж') and SEX_FLAG:
                 search_params += [request]
-                SEX_FLAG = False
-                AGE_FLAG = True
-                show_button(event.user_id, 'Выбери возраст для поиска', age_check())
-            elif all([request in AGES_LIST, AGE_FLAG is True]):
+                SEX_FLAG, AGE_FLAG = False, True
+                ms.send_message(user_id=event.user_id, message=ms.choose_age(),
+                                keyboard=ms.get_keyboard(AGES_LIST))
+
+            elif request in AGES_LIST and AGE_FLAG:
                 search_params += [request]
-                AGE_FLAG = False
-                CITY_FLAG = True
-                write_msg(event.user_id, 'Напиши город в котором искать')
-            elif all([CITY_FLAG is True]):
+                AGE_FLAG, CITY_FLAG = False, True
+                ms.send_message(user_id=event.user_id,
+                                message=ms.choose_city())
+
+            elif CITY_FLAG:
                 search_params += [request]
                 CITY_FLAG == False
+                ms.send_message(user_id=event.user_id,
+                                message=str(vk_search.search_by_params()['items'][0]))
+
             elif re.match("пока", request, re.IGNORECASE):
-                write_msg(event.user_id, "До встречи!")
+                ms.send_message(user_id=event.user_id,
+                                message=ms.bye_message())
             else:
-                write_msg(event.user_id, 'Не поняла')
+                ms.send_message(user_id=event.user_id,
+                                message=ms.err_message())
+
+session.close()
