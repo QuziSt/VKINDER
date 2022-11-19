@@ -12,7 +12,7 @@ class MessageService:
     def hello_message(self, name):
         return (f"Привет, {name}.\n"
                 f"Давай найдем тебе вторую половинку.\n"
-                f"Укажи пол своего избранника(цы) - в ответ напиши М или Ж")
+                )
 
     def choose_sex(self):
         return 'Укажи пол своего избранника(цы)'

@@ -14,6 +14,7 @@ class Vk_search:
     def __init__(self, api, app_token):
         self.api = api
         self.app_api = vk_api.VkApi(token=app_token).get_api()
+        self.search_params = {}
 
     def get_user(self, user_id):
         return self.api.users.get(user_ids=str(user_id), fields=self.fields)

@@ -1,5 +1,5 @@
 import sqlalchemy as sq
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import declarative_base
 import enum
 
 class SexEnum(enum.IntEnum):

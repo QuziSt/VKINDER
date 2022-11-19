@@ -44,6 +44,7 @@ session = Session()
 ms = MessageService(VkKeyboard, VkKeyboardColor, vk)
 vk_search = Vk_search(vk.get_api(), config['VK']['vk_app_token'])
 
+
 for event in longpoll.listen():
 
     if event.type == VkEventType.MESSAGE_NEW:
@@ -52,7 +53,6 @@ for event in longpoll.listen():
             request = event.text
 
             if re.match('привет', request, re.IGNORECASE):
-                search_params = []
                 user = vk_search.get_user(event.user_id)[0]
                 ms.send_message(user_id=event.user_id,
                                 message=ms.hello_message(user['first_name']))
@@ -64,19 +64,19 @@ for event in longpoll.listen():
                 session.commit()
 
             elif request in ('М', 'Ж') and SEX_FLAG:
-                search_params += [request]
+                vk_search.search_params['sex'] = 'male' if request == 'М' else 'female'
                 SEX_FLAG, AGE_FLAG = False, True
                 ms.send_message(user_id=event.user_id, message=ms.choose_age(),
                                 keyboard=ms.get_keyboard(AGES_LIST))
 
             elif request in AGES_LIST and AGE_FLAG:
-                search_params += [request]
+                vk_search.search_params['age'] = str(request)
                 AGE_FLAG, CITY_FLAG = False, True
                 ms.send_message(user_id=event.user_id,
                                 message=ms.choose_city())
 
             elif CITY_FLAG:
-                search_params += [request]
+                vk_search.search_params['city'] = str(request)
                 CITY_FLAG == False
                 ms.send_message(user_id=event.user_id,
                                 message=str(vk_search.search_by_params()['items'][0]))
