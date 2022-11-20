@@ -10,11 +10,11 @@ class SexEnum(enum.IntEnum):
 Base = declarative_base()
 
 
-class Client(Base):
-    __tablename__ = "client"
+class Clients(Base):
+    __tablename__ = "clients"
 
     id = sq.Column(sq.Integer, primary_key=True)
-    client_id = sq.Column(sq.Integer, unique=True)
+    user_id = sq.Column(sq.Integer, unique=True)
     first_name = sq.Column(sq.String(length=40))
     last_name = sq.Column(sq.String(length=40))
     nickname = sq.Column(sq.String(length=40))
@@ -25,6 +25,17 @@ class Client(Base):
 
     def __str__(self):
         return f'Пользователь (id: {self.id}): "{self.first_name} {self.last_name}" ;'
+
+
+class Candidates(Base):
+    __tablename__ = "candidates"
+
+    id = sq.Column(sq.Integer, primary_key=True)
+    user_id = sq.Column(sq.Integer, unique=True)
+    first_name = sq.Column(sq.String(length=40))
+    last_name = sq.Column(sq.String(length=40))
+    domain = sq.Column(sq.String(length=1000))
+    photos = sq.Column(sq.String(length=1000))
 
 
 def create_tables(engine):
