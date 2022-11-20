@@ -17,6 +17,7 @@ class MessageService:
             'bye': False,
             'choice': False
         }
+        self.buttons = None
 
     @property
     def cur_req(self):
@@ -62,14 +63,14 @@ class MessageService:
         self.vk.method('messages.send', body)
 
     def get_keyboard(self, texts, colors_types=[]):
-        vk_keyboard = self.vk_keyboard(one_time=True)
+        self.buttons = self.vk_keyboard(one_time=True)
         for text, color_type in zip_longest(texts, colors_types, fillvalue='PRIMARY'):
             color = {
                 'PRIMARY': self.vk_color.PRIMARY,
                 'NEGATIVE': self.vk_color.NEGATIVE
             }[color_type]
-            vk_keyboard.add_button(text, color=color)
-        return vk_keyboard
+            self.buttons.add_button(text, color=color)
+        return self.buttons
 
     def get_photos_att(self, photos):
         return ','.join(f"photo{photo['owner_id']}_{photo['id']}" for photo in photos)

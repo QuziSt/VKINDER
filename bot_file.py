@@ -67,15 +67,10 @@ for event in longpoll.listen():
                 ms.send_message(user_id=event.user_id, message=ms.choose_age(),
                                 keyboard=ms.get_keyboard(vks.AGES_LIST))
 
-            elif ms.cur_req == 'age':
-                if request in vks.AGES_LIST:
-                    vks.age = request
-                    ms.send_message(user_id=event.user_id,
-                                    message=ms.choose_city(),
-                                    keyboard=ms.get_keyboard([vks.client_city]))
-                else:
-                    ms.send_message(user_id=event.user_id, message=ms.choose_age(),
-                                    keyboard=ms.get_keyboard(vks.AGES_LIST))
+            elif ms.cur_req == 'age' and request in vks.AGES_LIST:
+                ms.send_message(user_id=event.user_id,
+                                message=ms.choose_city(),
+                                keyboard=ms.get_keyboard([vks.client_city]))
 
             elif re.match("Удалить", request, re.IGNORECASE):
                 candidate = DbService(session).drop_candidate()
@@ -104,22 +99,23 @@ for event in longpoll.listen():
 
             elif ms.cur_req == 'city' or ms.cur_req == 'choice':
                 vks.city = request
-                if not vks.city:
-                    ms.send_message(user_id=event.user_id,
-                                    message=ms.choose_city())
-                else:
+                if vks.city:
                     user = vks.get_user()
                     photos = vks.get_photos(user['id'])
                     photos_att = ms.get_photos_att(photos)
                     ms.send_message(user_id=event.user_id,
                                     message=ms.send_candidate(user), attachment=photos_att,
                                     keyboard=ms.get_keyboard(['Следующий', 'Сохранить']))
+                else:
+                    ms.send_message(user_id=event.user_id,
+                                    message='Нет такого города',
+                                    keyboard=ms.get_keyboard([vks.client_city]))
 
             elif re.match("пока", request, re.IGNORECASE):
                 ms.send_message(user_id=event.user_id,
                                 message=ms.bye_message())
             else:
                 ms.send_message(user_id=event.user_id,
-                                message=ms.err_message())
+                                message=ms.err_message(), keyboard=ms.buttons)
 
 session.close()
