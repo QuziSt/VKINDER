@@ -24,7 +24,7 @@ class Vk_search:
             'photo': 1,
             'domain': 1,
             'site': 1,
-            'count': 20,
+            'count': 3,
             'offset': 0,
             'has_photo': 1
         }
@@ -86,7 +86,7 @@ class Vk_search:
             else:
                 return self.user 
         except StopIteration:
-            self._search_params['offset'] += 100
+            self._search_params['offset'] += 3
             self.users = self.search_by_params()['items']
             if not self.users:
                 return

@@ -68,6 +68,7 @@ for event in longpoll.listen():
                                 keyboard=ms.get_keyboard(vks.AGES_LIST))
 
             elif ms.cur_req == 'age' and request in vks.AGES_LIST:
+                vks.age = request
                 ms.send_message(user_id=event.user_id,
                                 message=ms.choose_city(),
                                 keyboard=ms.get_keyboard([vks.client_city]))
