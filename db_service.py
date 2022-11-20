@@ -42,6 +42,7 @@ class DbService:
         return self.session.query(Candidates).order_by(Candidates.id.desc()).all()
 
     def drop_candidate(self):
-        last = self.session.query(Candidates.id).order_by(Candidates.id.desc()).limit(1).one()
+        last = self.session.query(Candidates).order_by(Candidates.id.desc()).limit(1).one()
         self.session.query(Candidates).filter(Candidates.id == last.id).delete()
+        return last
 

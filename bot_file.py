@@ -44,9 +44,7 @@ ms = MessageService(VkKeyboard, VkKeyboardColor, vk)
 vks = Vk_search(vk.get_api(), config['VK']['vk_app_token'])
 
 
-
 for event in longpoll.listen():
-
 
     if event.type == VkEventType.MESSAGE_NEW:
 
@@ -82,25 +80,26 @@ for event in longpoll.listen():
             elif re.match("Удалить", request, re.IGNORECASE):
                 candidate = DbService(session).drop_candidate()
                 session.commit()
-                ms.send_message(user_id=event.user_id, message='удалено', 
+                ms.send_message(user_id=event.user_id, message=f'удален {candidate.first_name} {candidate.last_name}',
                                 keyboard=ms.get_keyboard(['Следующий', 'Избранное']))
 
             elif re.match("Избранное", request, re.IGNORECASE):
                 candidates = DbService(session).get_candidates()
                 if candidates:
                     for candidate in candidates:
-                        ms.send_message(user_id=event.user_id, message=ms.send_favorite(candidate), 
+                        ms.send_message(user_id=event.user_id, message=ms.send_favorite(candidate),
                                         attachment=candidate.photos, keyboard=ms.get_keyboard(['Следующий', 'Удалить']))
                 else:
-                    ms.send_message(user_id=event.user_id, message='Никого нет в избранном', 
-                                    keyboard=ms.get_keyboard(['Следующий']))                    
+                    ms.send_message(user_id=event.user_id, message='Никого нет в избранном',
+                                    keyboard=ms.get_keyboard(['Следующий']))
 
             elif re.match("Сохранить", request, re.IGNORECASE) and ms.cur_req == 'choice':
-                candidate = DbService(session).save_candidate(vks.user, ms.get_photos_att(vks.photos))
+                candidate = DbService(session).save_candidate(
+                    vks.user, ms.get_photos_att(vks.photos))
                 print(candidate)
                 session.add(candidate)
                 session.commit()
-                ms.send_message(user_id=event.user_id, message='сохранено', 
+                ms.send_message(user_id=event.user_id, message='сохранено',
                                 keyboard=ms.get_keyboard(['Следующий', 'Избранное']))
 
             elif ms.cur_req == 'city' or ms.cur_req == 'choice':
@@ -115,7 +114,6 @@ for event in longpoll.listen():
                     ms.send_message(user_id=event.user_id,
                                     message=ms.send_candidate(user), attachment=photos_att,
                                     keyboard=ms.get_keyboard(['Следующий', 'Сохранить']))
-
 
             elif re.match("пока", request, re.IGNORECASE):
                 ms.send_message(user_id=event.user_id,

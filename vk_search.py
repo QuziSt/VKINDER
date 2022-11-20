@@ -24,7 +24,7 @@ class Vk_search:
             'photo': 1,
             'domain': 1,
             'site': 1,
-            'count': 3,
+            'count': 20,
             'offset': 0,
             'has_photo': 1
         }
