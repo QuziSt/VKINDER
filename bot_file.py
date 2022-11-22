@@ -10,6 +10,8 @@ from sqlalchemy.orm import sessionmaker
 from db_service import DbService
 from message_service import MessageService
 from vk_search import Vk_search
+from random import randrange
+import requests
 
 
 def get_config():
@@ -31,9 +33,6 @@ def get_DSN(config):
     return f'postgresql://{PG_USER}:{PG_PASSWORD}@{SERVER}:{PORT}/{DB_NAME}'
 
 
-SEX_FLAG, AGE_FLAG, CITY_FLAG = False, False, False
-AGES_LIST = ['18-25', '25-35', '35-40', '40-50']
-
 config = get_config()
 vk = vk_api.VkApi(token=get_token(config))
 longpoll = VkLongPoll(vk)
@@ -42,44 +41,81 @@ create_tables(engine)
 Session = sessionmaker(bind=engine)
 session = Session()
 ms = MessageService(VkKeyboard, VkKeyboardColor, vk)
-vk_search = Vk_search(vk.get_api(), config['VK']['vk_app_token'])
+vks = Vk_search(vk.get_api(), config['VK']['vk_app_token'])
+
 
 
 for event in longpoll.listen():
+
 
     if event.type == VkEventType.MESSAGE_NEW:
 
         if event.to_me:
             request = event.text
 
-            if re.match('привет', request, re.IGNORECASE):
-                user = vk_search.get_user(event.user_id)[0]
+            if re.match('Привет', request, re.IGNORECASE):
+
+                user = vks.get_client(event.user_id)
                 ms.send_message(user_id=event.user_id,
                                 message=ms.hello_message(user['first_name']))
                 ms.send_message(user_id=event.user_id, message=ms.choose_sex(),
                                 keyboard=ms.get_keyboard(('М', 'Ж'), ['PRIMARY', 'NEGATIVE']))
-                SEX_FLAG = True
                 client = DbService(session).save_client(user)
                 session.add(client)
                 session.commit()
 
-            elif request in ('М', 'Ж') and SEX_FLAG:
-                vk_search.search_params['sex'] = 'male' if request == 'М' else 'female'
-                SEX_FLAG, AGE_FLAG = False, True
+            elif request in ('М', 'Ж') and ms.cur_req == 'sex':
+                vks.sex = request
                 ms.send_message(user_id=event.user_id, message=ms.choose_age(),
-                                keyboard=ms.get_keyboard(AGES_LIST))
+                                keyboard=ms.get_keyboard(vks.AGES_LIST))
 
-            elif request in AGES_LIST and AGE_FLAG:
-                vk_search.search_params['age'] = str(request)
-                AGE_FLAG, CITY_FLAG = False, True
-                ms.send_message(user_id=event.user_id,
-                                message=ms.choose_city())
+            elif ms.cur_req == 'age':
+                if request in vks.AGES_LIST:
+                    vks.age = request
+                    ms.send_message(user_id=event.user_id,
+                                    message=ms.choose_city(),
+                                    keyboard=ms.get_keyboard([vks.client_city]))
+                else:
+                    ms.send_message(user_id=event.user_id, message=ms.choose_age(),
+                                    keyboard=ms.get_keyboard(vks.AGES_LIST))
 
-            elif CITY_FLAG:
-                vk_search.search_params['city'] = str(request)
-                CITY_FLAG == False
-                ms.send_message(user_id=event.user_id,
-                                message=str(vk_search.search_by_params()['items'][0]))
+            elif re.match("Удалить", request, re.IGNORECASE):
+                candidate = DbService(session).drop_candidate()
+                session.commit()
+                ms.send_message(user_id=event.user_id, message='удалено', 
+                                keyboard=ms.get_keyboard(['Следующий', 'Избранное']))
+
+            elif re.match("Избранное", request, re.IGNORECASE):
+                candidates = DbService(session).get_candidates()
+                if candidates:
+                    for candidate in candidates:
+                        ms.send_message(user_id=event.user_id, message=ms.send_favorite(candidate), 
+                                        attachment=candidate.photos, keyboard=ms.get_keyboard(['Следующий', 'Удалить']))
+                else:
+                    ms.send_message(user_id=event.user_id, message='Никого нет в избранном', 
+                                    keyboard=ms.get_keyboard(['Следующий']))                    
+
+            elif re.match("Сохранить", request, re.IGNORECASE) and ms.cur_req == 'choice':
+                candidate = DbService(session).save_candidate(vks.user, ms.get_photos_att(vks.photos))
+                print(candidate)
+                session.add(candidate)
+                session.commit()
+                ms.send_message(user_id=event.user_id, message='сохранено', 
+                                keyboard=ms.get_keyboard(['Следующий', 'Избранное']))
+
+            elif ms.cur_req == 'city' or ms.cur_req == 'choice':
+                vks.city = request
+                if not vks.city:
+                    ms.send_message(user_id=event.user_id,
+                                    message=ms.choose_city())
+                else:
+                    user = vks.get_user()
+                    photos = vks.get_photos(user['id'])
+                    photos_att = ms.get_photos_att(photos)
+                    ms.send_message(user_id=event.user_id,
+                                    message=ms.send_candidate(user), attachment=photos_att,
+                                    keyboard=ms.get_keyboard(['Следующий', 'Сохранить']))
+
 
             elif re.match("пока", request, re.IGNORECASE):
                 ms.send_message(user_id=event.user_id,
