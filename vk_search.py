@@ -58,6 +58,12 @@ class Vk_search:
             city_id = city[0].get('id')
             self._search_params['city'] = city_id
 
+    def check_token(self):
+        try:
+            return self.app_api.apps.get()
+        except ApiError:
+            print('Ошибка:\n', traceback.format_exc())
+
     def get_client(self, user_id):
         user = self.api.users.get(user_ids=str(user_id), fields=self.fields)[0]
         self.client_city = user.get('city').get('title')
