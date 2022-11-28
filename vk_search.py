@@ -6,8 +6,6 @@ import traceback
 
 class Vk_search:
 
-    AGES_LIST = ['18-25', '25-35', '35-40', '40-50']
-
     fields = 'bdate,activities,about,blacklisted,blacklisted_by_me,books,can_be_invited_group,can_post,' \
         'can_see_all_posts,can_see_audio,can_send_friend_request,can_write_private_message,career,connections,' \
         'contacts,city,country,crop_photo,domain,education,exports,followers_count,friend_status,has_photo,' \
@@ -24,7 +22,7 @@ class Vk_search:
             'photo': 1,
             'domain': 1,
             'site': 1,
-            'count': 3,
+            'count': 10,
             'offset': 0,
             'has_photo': 1
         }
@@ -92,7 +90,7 @@ class Vk_search:
             else:
                 return self.user 
         except StopIteration:
-            self._search_params['offset'] += 3
+            self._search_params['offset'] += 10
             self.users = self.search_by_params()['items']
             if not self.users:
                 return

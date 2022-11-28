@@ -1,6 +1,8 @@
 import sqlalchemy as sq
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, relationship
 import enum
+
+
 
 class SexEnum(enum.IntEnum):
     female = 1
@@ -27,7 +29,7 @@ class Clients(Base):
     candidate_city = sq.Column(sq.String(length=40))
 
     def __str__(self):
-        return f'Пользователь (id: {self.id}): "{self.first_name} {self.last_name}" ;'
+        return f'Пользователь (id: {self.user_id}): "{self.first_name} {self.last_name}" ;'
 
 
 class Candidates(Base):
@@ -39,6 +41,18 @@ class Candidates(Base):
     last_name = sq.Column(sq.String(length=40))
     domain = sq.Column(sq.String(length=1000))
     photos = sq.Column(sq.String(length=1000))
+
+
+class Clients_and_Candidates(Base):
+    __tablename__ = "clients_and_candidates"
+
+    id = sq.Column(sq.Integer, primary_key=True)
+
+    client_id = sq.Column(sq.Integer, sq.ForeignKey("clients.user_id", ondelete="CASCADE"))
+    clients = relationship(Clients, backref="clients_and_candidates", cascade="all,delete")
+
+    candidate_id = sq.Column(sq.Integer, sq.ForeignKey("candidates.user_id", ondelete="CASCADE"))
+    candidates = relationship(Candidates, backref="clients_and_candidates", cascade="all,delete")
 
 
 def create_tables(engine):
