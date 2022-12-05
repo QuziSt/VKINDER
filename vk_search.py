@@ -6,8 +6,6 @@ import traceback
 
 class Vk_search:
 
-    AGES_LIST = ['18-25', '25-35', '35-40', '40-50']
-
     fields = 'bdate,activities,about,blacklisted,blacklisted_by_me,books,can_be_invited_group,can_post,' \
         'can_see_all_posts,can_see_audio,can_send_friend_request,can_write_private_message,career,connections,' \
         'contacts,city,country,crop_photo,domain,education,exports,followers_count,friend_status,has_photo,' \
@@ -24,48 +22,30 @@ class Vk_search:
             'photo': 1,
             'domain': 1,
             'site': 1,
-            'count': 3,
+            'count': 10,
             'offset': 0,
-            'has_photo': 1
+            'has_photo': 1,
+            'is_closed': 0,    
         }
-        self.users = None
 
-    @property
-    def sex(self):
-        return self._search_params.get('sex')
+    def get_sex(self, request):
+        return 2 if request == 'М' else 1
 
-    @sex.setter
-    def sex(self, request):
-        self._search_params['sex'] = 2 if request == 'М' else 1
-
-    @property
-    def age(self):
-        return f"{self._search_params.get('age_from')}-{self._search_params.get('age_to')}"
-
-    @age.setter
-    def age(self, request):
-        self._search_params['age_from'] = request.split('-')[0]
-        self._search_params['age_to'] = request.split('-')[1]
-
-    @property
-    def city(self):
-        return self._search_params.get('city')
-
-    @city.setter
-    def city(self, request):
+    def get_city(self, request):
         city = self._get_city(request).get('items')
         if city:
-            city_id = city[0].get('id')
-            self._search_params['city'] = city_id
+            return city[0].get('id')
+
+    def check_token(self):
+        try:
+            return self.app_api.apps.get()
+        except ApiError:
+            print('Ошибка:\n', traceback.format_exc())
 
     def get_client(self, user_id):
         user = self.api.users.get(user_ids=str(user_id), fields=self.fields)[0]
         self.client_city = user.get('city').get('title')
         return user
-
-    def _get_search_fields(self, params):
-        fields_list = [f'{k}={v}' for k, v in params.items()]
-        return ','.join(fields_list)
 
     def search_by_params(self):
         return self.app_api.users.search(
@@ -75,24 +55,6 @@ class Vk_search:
 
     def _get_city(self, request):
         return self.app_api.database.getCities(q=request)
-
-    def get_user(self):
-        if not self.users:
-            self.users = iter(self.search_by_params()['items'])
-        try:
-            self.user = next(self.users)
-            if self.user['is_closed']:
-                return self.get_user()
-            else:
-                return self.user 
-        except StopIteration:
-            self._search_params['offset'] += 100
-            self.users = self.search_by_params()['items']
-            if not self.users:
-                return
-            else:
-                self.users = iter(self.users)
-                return self.get_user() 
 
     def get_photos(
         self,
@@ -107,7 +69,7 @@ class Vk_search:
             'album_id': album_id,
             'extended': extended,
             'photo_sizes': photo_sizes,
-            'count': 100,
+            'count': count,
             'offset': 0
         }
         try:
@@ -118,6 +80,23 @@ class Vk_search:
         except ApiError:
             print('Ошибка:\n', traceback.format_exc())
 
+    def conver_param(self, key, value = None):
+        return {
+            'Пол': ('sex', self.get_sex(value)),
+            'Город': ('city_id', self.get_city(value)),
+            'Возраст от': ('age_from', value),
+            'Возраст до': ('age_to', value),
+        }[key]
 
-        
+    def _set_search_params(self, params):
+        for k, v in params.items():
+            new_key, new_val = self.conver_param(k, v[0])
+            self._search_params[new_key] = new_val 
 
+    def get_users(self, params, offset):
+        self._set_search_params(params)
+        self._search_params['offset'] = offset
+        print(self._search_params)
+        users = self.search_by_params()['items']
+        users = list(filter(lambda user: not user['is_closed'], users))
+        return users

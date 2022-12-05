@@ -1,6 +1,21 @@
+@app_id = 51407600
+@token = vk1.a.eYDffMLYCohXe3F2iEzSwOcrcqZvcRu0XNedGHdumMiu0AO-iy9SjBCGhVo9jD1lYG3U1CxORFJULLsBWRC5fwtkVy7BPdSWce6_q-W4vjJyT3ElEzGSKoQynIFJbq1SlPraNWYFhZKwjJ8vsg4Y7mMj1vaT9tlPzCXONNWp-I2lpfACxwBM3ynjH8M7YqtX
+@access_token = vk1.a.6JIJMNzk9vUlTArhEFtFQkxi1YR5N1wIXMyTTbiMO7OecVw2vGJ5k7uk0eT0dycDt05_kA57d-sea8GP3NZ-mxJknYLVygTmCCC29Kpjwy_j2PMIgMY7wvGYClCqKhidjJ5XJbQ9fqewLjN9RPQrbS4fnAcR3HOCvZc4RFw5FS0xQmv3u-C0z6v-pskEOD6Q
 
-@token = vk1.a.RRNfyTIHfp3y5r3kPa3nD3q8aBTTG81zqLCFA0iKElT27FwkAzIRU2jadBT5woCCIWH0Y8-zL-uvTZUXU3Uo45hq6dwpLZ7ZHUMwvOArzsPvzZmPpkPs8a8O3Hukc7KgvjIec6AVN2xZxP3JuYJtVShUgh24l_ntYpbj-B9DfXN2C7aUJOBKDtzmhXqsE0hfn-ahk2FElfLiV2z1Ul9dqw
+@k = acab40ceacab40ceacab40ce3dafbb2a3eaacabacab40cecfa81f81365dd4f66268d03e
+# get token 
+GET https://oauth.vk.com/authorize?client_id=51407600&scope=00040&response_type=token
+
 @v = 5.131
+###
+
+GET https://api.vk.com/method/secure.checkToken?token={{token}}&access_token={{k}}&v={{v}}
+
+
+###
+
+
+
 @owner_id=703758419
 
 @album_id = profile
