@@ -324,7 +324,7 @@ class MessageService:
         param = self.vks.convert_param(self.client.changing_param)[0]
         self.dbs.update("clients", self.client.user_id,
                         f"candidate_{param}", self.message)
-        self.dbs.update("clients", self.client.user_id, f"changing_param", "")
+        self.dbs.update("clients", self.client.user_id, "changing_param", "")
         self.dbs.drop_candidates(self.client.user_id)
         self.send(message=self.send_changed(), keyboard=self.search_kb())
 
