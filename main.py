@@ -17,8 +17,6 @@ from models import create_tables
 config = get_config()
 vk = vk_api.VkApi(token=get_token(config))
 longpoll = VkLongPoll(vk)
-vks = Vk_search(vk.get_api(), config['VK']['vk_app_token'])
-ms = MessageService(VkKeyboard, VkKeyboardColor, vk)
 
 engine = sq.create_engine(get_DSN(config))
 create_tables(engine)
@@ -28,5 +26,4 @@ if __name__ == '__main__':
 
         if event.type == VkEventType.MESSAGE_NEW:
             if event.to_me:
-                request = event.text
-                threading.Thread(target=processing_message, args=(vks, ms, event, request)).start()
+                threading.Thread(target=processing_message, args=(vk, event, engine)).start()
