@@ -23,4 +23,6 @@ if __name__ == '__main__':
 
         if event.type == VkEventType.MESSAGE_NEW:
             if event.to_me:
-                threading.Thread(target=processing_message, args=(vk, event, engine)).start()
+                threading.Thread(
+                    target=processing_message, args=(vk, event, engine)
+                ).start()
