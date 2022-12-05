@@ -6,5 +6,6 @@ def get_config():
     config.read('token.ini')
     return config
 
+
 def get_token(config):
     return config['VK']['vk_group_token']

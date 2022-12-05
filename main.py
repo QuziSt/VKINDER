@@ -1,14 +1,11 @@
 
 import vk_api
 import threading
-from vk_api.longpoll import VkLongPoll, VkEventType
+from vk_api.longpoll import VkEventType
 from bot_file import processing_message
 import sqlalchemy as sq
 
 from vk_api.longpoll import VkLongPoll
-from vk_api.keyboard import VkKeyboard, VkKeyboardColor
-from message_service import MessageService
-from vk_search import Vk_search
 from conf import get_token, get_config
 from db_service import get_DSN
 from models import create_tables

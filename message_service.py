@@ -120,10 +120,10 @@ class MessageService:
         return message
 
     def send_saved(self, candidate):
-        return (f"Пользователь {candidate.first_name} {candidate.last_name} сохранен\n")
+        return f"Пользователь {candidate.first_name} {candidate.last_name} сохранен\n"
 
     def err_saved(self):
-        return (f"Последний просмотренный пользователь уже был сохранен.\n")
+        return f"Последний просмотренный пользователь уже был сохранен.\n"
 
     def send_favorite(self, user):
         message = (f"{user.first_name} {user.last_name}\n"
@@ -153,7 +153,7 @@ class MessageService:
 
     def sex_kb(self):
         return self.get_keyboard(
-            ('М', 'Ж'), ['PRIMARY', 'NEGATIVE'],
+            ('М', 'Ж'), colors=['PRIMARY', 'NEGATIVE'],
             show_change_b=False, show_fav_b=False
         )
 

@@ -1,14 +1,4 @@
-import vk_api
-
-
 from models import create_tables, Clients, Candidates, Clients_and_Candidates
-from sqlalchemy.exc import NoResultFound
-from sqlalchemy.inspection import inspect
-import sqlalchemy as sq
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import func
-
-from conf import get_config
 
 
 def get_DSN(config):

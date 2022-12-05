@@ -80,7 +80,7 @@ class Vk_search:
         except ApiError:
             print('Ошибка:\n', traceback.format_exc())
 
-    def conver_param(self, key, value = None):
+    def conver_param(self, key, value=None):
         return {
             'Пол': ('sex', self.get_sex(value)),
             'Город': ('city_id', self.get_city(value)),
