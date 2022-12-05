@@ -3,10 +3,10 @@ from sqlalchemy.orm import declarative_base, relationship
 import enum
 
 
-
 class SexEnum(enum.IntEnum):
     female = 1
     male = 2
+
 
 Base = declarative_base()
 
@@ -34,9 +34,9 @@ class Clients(Base):
     candidate_id = sq.Column(sq.Integer)
     offset = sq.Column(sq.Integer, default=-10)
 
-
     def __str__(self):
-        return f'Пользователь (id: {self.user_id}): "{self.first_name} {self.last_name}" ;'
+        return (f'Пользователь (id: {self.user_id}): '
+                f'"{self.first_name} {self.last_name}" ;')
 
 
 class Candidates(Base):
@@ -51,22 +51,23 @@ class Candidates(Base):
     favorite = sq.Column(sq.Boolean, default=False)
     viewed = sq.Column(sq.Boolean, default=False)
 
+
 class Clients_and_Candidates(Base):
     __tablename__ = "clients_and_candidates"
 
     id = sq.Column(sq.Integer, primary_key=True)
 
-    client_id = sq.Column(sq.Integer, sq.ForeignKey("clients.user_id", ondelete="CASCADE"))
-    clients = relationship(Clients, backref="clients_and_candidates", cascade="all,delete")
+    client_id = sq.Column(
+        sq.Integer, sq.ForeignKey("clients.user_id", ondelete="CASCADE"))
+    clients = relationship(
+        Clients, backref="clients_and_candidates", cascade="all,delete")
 
-    candidate_id = sq.Column(sq.Integer, sq.ForeignKey("candidates.user_id", ondelete="CASCADE"))
-    candidates = relationship(Candidates, backref="clients_and_candidates", cascade="all,delete")
+    candidate_id = sq.Column(
+        sq.Integer, sq.ForeignKey("candidates.user_id", ondelete="CASCADE"))
+    candidates = relationship(
+        Candidates, backref="clients_and_candidates", cascade="all,delete")
 
 
 def create_tables(engine):
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
-
-
-
-

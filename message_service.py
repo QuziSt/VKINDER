@@ -1,16 +1,15 @@
+import re
+import json
 from random import randrange
 from itertools import zip_longest
 from db_service import DbService
 from vk_search import Vk_search
-import re
 from conf import get_config
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
-import json
 
 
 class MessageService:
-
     def __init__(self, keyboard, vl_color, vk, event, engine):
         self.vk_keyboard = keyboard
         self.vk_color = vl_color
@@ -71,23 +70,35 @@ class MessageService:
 
     def get_search_params(self):
         params = {
-            'Пол': (self.get_sex_param(), self.sex_kb, self.sex_validator()),
-            'Город': (self.get_city_param(), self.city_kb, self.city_validator()),
-            'Возраст от': (self.get_age_param(), self.age_kb_from, self.age_validator_from()),
-            'Возраст до': (self.get_age_to(), self.age_kb_to, self.age_validator_to()),
+            'Пол': (self.get_sex_param(),
+                    self.sex_kb,
+                    self.sex_validator()),
+            'Город': (self.get_city_param(),
+                      self.city_kb,
+                      self.city_validator()),
+            'Возраст от': (self.get_age_param(),
+                           self.age_kb_from,
+                           self.age_validator_from()),
+            'Возраст до': (self.get_age_to(),
+                           self.age_kb_to,
+                           self.age_validator_to()),
         }
         return params
 
     def sex_validator(self):
+        # TODO
         pass
 
     def city_validator(self):
+        # TODO
         pass
 
     def age_validator_from(self):
+        # TODO
         pass
 
     def age_validator_to(self):
+        # TODO
         pass
 
     def token_expired(self):
@@ -104,7 +115,7 @@ class MessageService:
 
     def hello_message(self):
         message = f"Привет, {self.client.first_name}.\n"
-        message += f"Давай найдем тебе вторую половинку.\n"
+        message += "Давай найдем тебе вторую половинку.\n"
         message = self._add_search_data(message)
         return message
 
@@ -112,7 +123,9 @@ class MessageService:
         return 'Не поняла'
 
     def get_photos_att(self, photos):
-        return ','.join(f"photo{photo['owner_id']}_{photo['id']}" for photo in photos)
+        return ','.join(
+            f"photo{photo['owner_id']}_{photo['id']}" for photo in photos
+        )
 
     def send_candidate(self, user):
         message = (f"{user.first_name} {user.last_name}\n"
@@ -120,10 +133,11 @@ class MessageService:
         return message
 
     def send_saved(self, candidate):
-        return f"Пользователь {candidate.first_name} {candidate.last_name} сохранен\n"
+        return f"Пользователь {candidate.first_name} " \
+               f"{candidate.last_name} сохранен\n"
 
     def err_saved(self):
-        return f"Последний просмотренный пользователь уже был сохранен.\n"
+        return "Последний просмотренный пользователь уже был сохранен.\n"
 
     def send_favorite(self, user):
         message = (f"{user.first_name} {user.last_name}\n"
@@ -135,7 +149,8 @@ class MessageService:
         return "В избранном пока никого нет."
 
     def send_del(self, candidate):
-        message = (f"Пользватель: {candidate.first_name} {candidate.last_name}\n"
+        message = (f"Пользователь: {candidate.first_name}"
+                   f" {candidate.last_name}\n"
                    f"удален\n")
         return message
 
@@ -165,7 +180,8 @@ class MessageService:
         )
 
     def age_kb_to(self):
-        age_list = [i for i in range(self.client.candidate_age_from, 60, 4)][:10]
+        age_list = [i for i in range(
+            self.client.candidate_age_from, 60, 4)][:10]
         return self.get_keyboard(
             age_list,
             show_change_b=False, show_fav_b=False
@@ -187,7 +203,11 @@ class MessageService:
         buttons = []
         for param in self.get_search_params():
             buttons.append(param)
-        return self.get_keyboard(buttons, show_change_b=False, show_fav_b=False, payload={'params_change': self.message})
+        return self.get_keyboard(
+            buttons,
+            show_change_b=False,
+            show_fav_b=False, payload={'params_change': self.message}
+        )
 
     def send(self, message, keyboard=None, complete=False, **kwargs):
         if complete:
@@ -251,7 +271,8 @@ class MessageService:
                         "candidate_id", candidate.user_id)
         photos = self.vks.get_photos(candidate.user_id)
         photos_att = self.get_photos_att(photos)
-        self.send(message=self.send_candidate(candidate), attachment=photos_att,
+        self.send(message=self.send_candidate(candidate),
+                  attachment=photos_att,
                   keyboard=self.search_kb(save=True),  complete=True)
 
     def answ_save(self):
@@ -271,7 +292,9 @@ class MessageService:
                 photos_att = self.get_photos_att(photos)
                 self.send(message=self.send_favorite(candidate),
                           attachment=photos_att,
-                          keyboard=self.search_kb(delete=True, show_fav_b=False))
+                          keyboard=self.search_kb(
+                              delete=True,
+                              show_fav_b=False))
         else:
             self.send(message=self.err_favorites(),
                       keyboard=self.search_kb(delete=True, show_fav_b=False))
@@ -298,21 +321,22 @@ class MessageService:
             self.answ_err()
 
     def answ_param_changed(self):
-        param = self.vks.conver_param(self.client.changing_param)[0]
+        param = self.vks.convert_param(self.client.changing_param)[0]
         self.dbs.update("clients", self.client.user_id,
                         f"candidate_{param}", self.message)
-        self.dbs.update("clients", self.client.user_id, f"changing_param", "")
+        self.dbs.update("clients", self.client.user_id, "changing_param", "")
         self.dbs.drop_candidates(self.client.user_id)
         self.send(message=self.send_changed(), keyboard=self.search_kb())
 
     def get_keyboard(
         self,
         texts,
-        payload={},
         colors_types=[],
+        payload={},
         show_fav_b=True,
         show_change_b=True,
-        **kwargs
+        **kwargs,
+        
     ):
         self.buttons = self.vk_keyboard(one_time=True)
         for i, val in enumerate(zip_longest(texts, colors_types, fillvalue='PRIMARY')):
@@ -326,18 +350,22 @@ class MessageService:
             self.buttons.add_button(text, color=color, payload=payload)
 
         if show_fav_b and self.client.greet:
-            self.buttons.add_button('Избранное', color=color, payload=payload)
+            self.buttons.add_button(
+                'Избранное', color=self.vk_color.PRIMARY, payload=payload)
 
         if kwargs.get('save'):
-            self.buttons.add_button('Сохранить', color=color, payload=payload)
+            self.buttons.add_button(
+                'Сохранить', color=self.vk_color.PRIMARY, payload=payload)
 
         if kwargs.get('delete'):
-            self.buttons.add_button('Удалить', color=color, payload=payload)
+            self.buttons.add_button(
+                'Удалить', color=self.vk_color.PRIMARY, payload=payload)
 
         if show_change_b:
             self.buttons.add_line()
             self.buttons.add_button(
-                'Изменить параметры поиска', color=color, payload=payload)
+                'Изменить параметры поиска',
+                color=self.vk_color.PRIMARY, payload=payload)
 
         return self.buttons
 
