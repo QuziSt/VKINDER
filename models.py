@@ -69,5 +69,5 @@ class Clients_and_Candidates(Base):
 
 
 def create_tables(engine):
-    Base.metadata.drop_all(engine)
+    # Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
